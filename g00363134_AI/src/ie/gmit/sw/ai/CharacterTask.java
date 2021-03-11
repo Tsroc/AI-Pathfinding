@@ -39,6 +39,7 @@ public class CharacterTask extends Task<Void>{
 	private char enemyID;
 	private int row;
 	private int col;
+	
 
 	/*
 	 * Configure each character with its own action. Use this functional interface
@@ -48,12 +49,29 @@ public class CharacterTask extends Task<Void>{
 	 */
 	private Command cmd;
 	
-	public CharacterTask(GameModel model, char enemyID, int row, int col, Command cmd) {
+	public CharacterTask(GameModel model, char enemyID, int row, int col) {
 		this.model = model;
 		this.enemyID = enemyID;
 		this.row = row;
 		this.col = col;
+		this.cmd = null;
+		
+	}
+	
+	public int getSleepTime() {
+		return SLEEP_TIME;
+	}
+	
+	public boolean getAlive() {
+		return alive;
+	}
+	
+	public void setCmd(Command cmd) {
 		this.cmd = cmd;
+	}
+	
+	public Command getCmd() {
+		return cmd;
 	}
 	
     @Override
@@ -66,37 +84,45 @@ public class CharacterTask extends Task<Void>{
     	 */
     	while (alive) {
         	Thread.sleep(SLEEP_TIME);
+        	action();
 
-        	synchronized (model) {
-        		//Randomly pick a direction up, down, left or right
-        		int temp_row = row, temp_col = col;
-        		if (rand.nextBoolean()) {
-            		temp_row += rand.nextBoolean() ? 1 : -1;
-            	}else {
-            		temp_col += rand.nextBoolean() ? 1 : -1;
-            	}
-            	
-            	if (model.isValidMove(row, col, temp_row, temp_col, enemyID)) {
-            		/*
-            		 * This fires if the character can move to a cell, i.e. if it is not
-            		 * already occupied. You can add extra logic here to invoke
-            		 * behaviour when the computer controlled character is in the proximity
-            		 * of the player or another character...
-            		 */
-            		model.set(temp_row, temp_col, enemyID);
-            		model.set(row, col, '\u0020');
-            		row = temp_row;
-            		col = temp_col;
-            	}else {  
-            		/*
-            		 * This fires if a move is not valid, i.e. if someone or some thing 
-            		 * is in the way. Use implementations of Command to control how the
-            		 * computer controls this character. 
-            		 */
-            		cmd.execute();
-            	}
-        	}
     	}
 		return null;
+    }
+    
+    private void action() {
+		synchronized (model) {
+			//Randomly pick a direction up, down, left or right
+			int temp_row = row, temp_col = col;
+			if (rand.nextBoolean()) {
+				temp_row += rand.nextBoolean() ? 1 : -1;
+			}else {
+				temp_col += rand.nextBoolean() ? 1 : -1;
+			}
+			
+			if(false) {
+				
+			}
+			else if (model.isValidMove(row, col, temp_row, temp_col, enemyID)) {
+				/*
+				 * This fires if the character can move to a cell, i.e. if it is not
+				 * already occupied. You can add extra logic here to invoke
+				 * behaviour when the computer controlled character is in the proximity
+				 * of the player or another character...
+				 */
+				model.set(temp_row, temp_col, enemyID);
+				model.set(row, col, '\u0020');
+				row = temp_row;
+				col = temp_col;
+			}else {  
+				/*
+				 * This fires if a move is not valid, i.e. if someone or some thing 
+				 * is in the way. Use implementations of Command to control how the
+				 * computer controls this character. 
+				 */
+				//System.out.println("Lets not spam console.");
+			}
+		}
+			
     }
 }

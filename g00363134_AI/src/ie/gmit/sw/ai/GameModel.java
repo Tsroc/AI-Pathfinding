@@ -82,6 +82,7 @@ public class GameModel {
 	
 	private void addGameCharacter(Collection<Task<Void>> tasks, char enemyID, char replace, int number){
 		int counter = 0;
+		
 		while (counter < number){
 			int row = rand.nextInt(model.length);
 			int col = rand.nextInt(model[0].length);
@@ -93,7 +94,11 @@ public class GameModel {
 				 * IMPORTANT! Change the following to parameterise your CharacterTask with an instance of
 				 * Command. The constructor call below is only parameterised with a lambda expression. 
 				 */
-				tasks.add(new CharacterTask(this, enemyID, row, col, ()-> System.out.println("Action executing!")));
+				//tasks.add(new CharacterTask(this, enemyID, row, col, ()-> System.out.println("Action executing!")));
+				
+				// Command has no connection with the CharacterTask, it should be based off values in the CharacterTask
+				//tasks.add(new CharacterTaskFuzzy(this, enemyID, row, col, rand.nextInt(100), rand.nextInt(100), rand.nextInt(100))); 
+				tasks.add(new CharacterTaskNN(this, enemyID, row, col, rand.nextInt(3), rand.nextInt(3), rand.nextInt(3))); 
 				counter++;
 			}
 		}

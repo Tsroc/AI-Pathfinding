@@ -49,6 +49,7 @@ public class GameWindow extends Application{
 	
     public void keyPressed(KeyEvent e) { //Handle key events
     	KeyCode key = e.getCode(); 
+    	/*
         if (key == KeyCode.RIGHT && currentCol < DEFAULT_SIZE - 1) {
         	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol + 1, PLAYER_ID)) currentCol++;   		
         }else if (key == KeyCode.LEFT && currentCol > 0) {
@@ -56,6 +57,22 @@ public class GameWindow extends Application{
         }else if (key == KeyCode.UP && currentRow > 0) {
         	if (model.isValidMove(currentRow, currentCol, currentRow - 1, currentCol, PLAYER_ID)) currentRow--;
         }else if (key == KeyCode.DOWN && currentRow < DEFAULT_SIZE - 1) {
+        	if (model.isValidMove(currentRow, currentCol, currentRow + 1, currentCol, PLAYER_ID)) currentRow++;        	  	
+        }else if (key == KeyCode.Z){
+        	view.toggleZoom();
+        }else{
+        	return;
+        }
+        */
+    	
+    	// Changing controls. - don't forget to revert this...
+        if (key == KeyCode.D && currentCol < DEFAULT_SIZE - 1) {
+        	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol + 1, PLAYER_ID)) currentCol++;   		
+        }else if (key == KeyCode.A && currentCol > 0) {
+        	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol - 1, PLAYER_ID)) currentCol--;	
+        }else if (key == KeyCode.W && currentRow > 0) {
+        	if (model.isValidMove(currentRow, currentCol, currentRow - 1, currentCol, PLAYER_ID)) currentRow--;
+        }else if (key == KeyCode.S && currentRow < DEFAULT_SIZE - 1) {
         	if (model.isValidMove(currentRow, currentCol, currentRow + 1, currentCol, PLAYER_ID)) currentRow++;        	  	
         }else if (key == KeyCode.Z){
         	view.toggleZoom();

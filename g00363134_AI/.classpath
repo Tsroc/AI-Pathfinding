@@ -6,11 +6,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="E:/ProgrammingWork/sem8/JARs/jFuzzyLogic.jar">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="E:/ProgrammingWork/sem8/JARs/javafx-sdk-11.0.2/lib/javafx.base.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
@@ -22,6 +17,11 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="E:/ProgrammingWork/sem8/JARs/javafx-sdk-11.0.2/lib/javafx.graphics.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="E:/ProgrammingWork/sem8/JARs/jFuzzyLogic.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>

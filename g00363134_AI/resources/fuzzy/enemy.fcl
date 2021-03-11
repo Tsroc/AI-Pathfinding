@@ -1,0 +1,47 @@
+FUNCTION_BLOCK EnemyLogic 
+	VAR_INPUT
+		hunger : REAL;
+		fear : REAL;
+		health : REAL;
+	END_VAR
+	
+	VAR_OUTPUT
+		personality : REAL;
+	END_VAR
+	
+	FUZZIFY hunger 
+		TERM starving := (0, 1) (30, 1) (45, 0);
+		TERM satisfied := trian 25 50 75;
+		TERM full := (50, 0) (70, 1) (100, 1);
+	END_FUZZIFY
+
+	FUZZIFY fear 
+		TERM brave := (0, 1) (30, 1) (45, 0);
+		TERM neutral := trian 25 50 75;
+		TERM coward := (50, 0) (70, 1) (100, 1);
+	END_FUZZIFY
+
+	FUZZIFY health 
+		TERM injured := (0, 1) (30, 1) (45, 0);
+		TERM medium := trian 25 50 75;
+		TERM healthy := (50, 0) (70, 1) (100, 1);
+	END_FUZZIFY
+	
+	DEFUZZIFY personality 
+		TERM skittish := (0, 1) (35, 0);
+		TERM friendly  := trian 20.0 37.0 55.0;
+		TERM aggressive := (55, 0) (100, 1);
+		METHOD : COG;
+		DEFAULT := 0;
+	END_DEFUZZIFY
+
+	RULEBLOCK No1
+		AND : MIN;
+		ACT : MIN;
+		ACCU : MAX;
+		RULE 1: IF health IS injured OR fear IS coward THEN personality IS skittish;
+		RULE 2: IF fear IS brave THEN personality IS friendly;
+		RULE 4: IF hunger IS starving THEN personality IS aggressive;
+	END_RULEBLOCK
+
+END_FUNCTION_BLOCK
