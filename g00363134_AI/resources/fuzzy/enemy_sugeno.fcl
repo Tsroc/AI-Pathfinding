@@ -10,28 +10,28 @@ FUNCTION_BLOCK EnemyLogic
 	END_VAR
 	
 	FUZZIFY hunger 
-		TERM starving := (0, 1) (20, 1) (30, 0);
-		TERM satisfied := trian 20 50 80;
-		TERM full := (70, 0) (80, 1) (100, 1);
+		TERM starving := 30;
+		TERM satisfied := 50;
+		TERM full := 80;
 	END_FUZZIFY
 
 	FUZZIFY fear 
-		TERM brave := (0, 1) (15, 1) (25, 0);
-		TERM neutral := trian 15 50 85;
-		TERM coward := (70, 0) (85, 1) (100, 1);
+		TERM brave := 25;
+		TERM neutral := 50;
+		TERM coward := 80;
 	END_FUZZIFY
 
 	FUZZIFY health 
-		TERM injured := (0, 1) (15, 1) (25, 0);
-		TERM well := trian 15 50 85;
-		TERM healthy := (70, 0) (85, 1) (100, 1);
+		TERM injured := 30;
+		TERM well := 50;
+		TERM healthy := 80;
 	END_FUZZIFY
 	
 	DEFUZZIFY personality 
-		TERM skittish := (0, 1) (30, 0);
-		TERM friendly  := trian 25.0 50.0 75.0;
-		TERM aggressive := (70, 0) (100, 1);
-		METHOD : COG;
+		TERM skittish := 30;
+		TERM friendly  := 50;
+		TERM aggressive := 70;
+		METHOD : COGS;
 		DEFAULT := 50;
 	END_DEFUZZIFY
 

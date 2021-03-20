@@ -5,21 +5,22 @@ import net.sourceforge.jFuzzyLogic.FunctionBlock;
 import net.sourceforge.jFuzzyLogic.plot.JFuzzyChart;
 import net.sourceforge.jFuzzyLogic.rule.Variable;
 
-public class FuzzyStuff implements Command {
+public class PersonalityFL implements Personality{
 	
 	private static final String FILE = "./resources/fuzzy/enemy.fcl";
 	private int hunger;
 	private int fear;
 	private int health;
+	private int personality;
 
-	public FuzzyStuff(int hunger, int fear, int health) {
+	public PersonalityFL(int hunger, int fear, int health) {
 		this.hunger = hunger;
 		this.fear = fear;
 		this.health = health;
 		
 	}
 	
-	public double getPersonality() {
+	public int determinePersonality() {
 		FIS fis = FIS.load(FILE, true); //Load and parse the FCL
 		
 		FunctionBlock fb = fis.getFunctionBlock("EnemyLogic");
@@ -34,23 +35,20 @@ public class FuzzyStuff implements Command {
 		Variable action = fb.getVariable("personality");
 		//JFuzzyChart.get().chart(action, action.getDefuzzifier(), true);
 		
-		return action.getValue();
+		this.personality = (int)action.getValue();
+		return this.personality;
 	}
 	
 	public String toString() {
-		if(this.getPersonality() > 55)
+		System.out.print(this.personality + ", ");
+		if(this.personality > 55)
 			return "Aggressive";
-		else if (this.getPersonality() > 35)
+		else if (this.personality > 35)
 			return "Friendly";
-		else if (this.getPersonality() >= 0)
+		else if (this.personality >= 0)
 			return "Scared";
 		else
 			return "Unknown";
-	}
-
-				
-	public void execute() {
-		
 	}
 	
 }

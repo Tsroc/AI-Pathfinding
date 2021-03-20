@@ -3,27 +3,32 @@ package ie.gmit.sw.ai;
 
 import ie.gmit.sw.ai.nn.Utils;
 
-public class NNStuff implements Command {
+public class PersonalityNN implements Personality{
 	private int personality;
 	private int hunger;
 	private int fear;
 	private int health;
 	
-	public NNStuff(int hunger, int fear, int health) {
+	public PersonalityNN(int hunger, int fear, int health) {
 		this.hunger = hunger;
 		this.fear = fear;
 		this.health = health;
 		
 	}
 	
-	public int getPersonality() throws Exception {
+	public int determinePersonality() {
 		double[] arr = {hunger, fear, health};
 		double[] result;
 		int classification = 0;
 		
-		result = NNTrain.getNN().process(arr);
-		classification = Utils.getMaxIndex(result);
-		this.personality = classification;
+		try {
+			result = TrainPersonalityNN.getNN().process(arr);
+			classification = Utils.getMaxIndex(result);
+			this.personality = classification;
+		} catch (Exception e) {
+			System.out.println("x");
+			e.printStackTrace();
+		}
 		
 		return classification;
 	}
@@ -43,13 +48,6 @@ public class NNStuff implements Command {
 			break;
 		}
 		return str;
-	}
-			
-
-	@Override
-	public void execute() {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

@@ -20,7 +20,7 @@ public class Runner {
 		 */
 		
 		  //Add long-running initialisation instructions here.
-		NNTrain.getInstance().train();
+		TrainPersonalityNN.getInstance().train();
 		
 		
 		/*

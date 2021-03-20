@@ -1,7 +1,10 @@
 package ie.gmit.sw.ai;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,7 +36,8 @@ public class GameModel {
 		model = new char[dimension][dimension];
 		init();
 		carve();
-		addGameCharacters();
+    	// NOTE: This has been changed because the player was not being seen with previous design
+		//addGameCharacters();
 	}
 	
 	public void tearDown() {
@@ -70,13 +74,15 @@ public class GameModel {
 		}
 	}
 	
-	private void addGameCharacters() {
+	//private void addGameCharacters() {
+	public void addGameCharacters() {
 		Collection<Task<Void>> tasks = new ArrayList<>();
 		addGameCharacter(tasks, '\u0032', '0', MAX_CHARACTERS / 5); //2 is a Red Enemy, 0 is a hedge
 		addGameCharacter(tasks, '\u0033', '0', MAX_CHARACTERS / 5); //3 is a Pink Enemy, 0 is a hedge
 		addGameCharacter(tasks, '\u0034', '0', MAX_CHARACTERS / 5); //4 is a Blue Enemy, 0 is a hedge
 		addGameCharacter(tasks, '\u0035', '0', MAX_CHARACTERS / 5); //5 is a Red Green Enemy, 0 is a hedge
 		addGameCharacter(tasks, '\u0036', '0', MAX_CHARACTERS / 5); //6 is a Orange Enemy, 0 is a hedge
+		//addGameCharacter(tasks, '\u0036', '0', 1); //6 is a Orange Enemy, 0 is a hedge
 		tasks.forEach(exec::execute);
 	}
 	
@@ -98,7 +104,7 @@ public class GameModel {
 				
 				// Command has no connection with the CharacterTask, it should be based off values in the CharacterTask
 				//tasks.add(new CharacterTaskFuzzy(this, enemyID, row, col, rand.nextInt(100), rand.nextInt(100), rand.nextInt(100))); 
-				tasks.add(new CharacterTaskNN(this, enemyID, row, col, rand.nextInt(3), rand.nextInt(3), rand.nextInt(3))); 
+				tasks.add(new CharacterTask(this, enemyID, row, col, rand.nextInt(101), rand.nextInt(101), rand.nextInt(101))); 
 				counter++;
 			}
 		}
@@ -129,4 +135,15 @@ public class GameModel {
 	public int size(){
 		return this.model.length;
 	}
+	
+	public boolean contains(char search) {
+		List<char[]> list = new ArrayList<char[]>();
+		for (char[] c: model)
+			list.addAll(Arrays.asList(c));
+		
+		if(list.contains(search))
+			return true;
+		return false;
+	}
+	
 }

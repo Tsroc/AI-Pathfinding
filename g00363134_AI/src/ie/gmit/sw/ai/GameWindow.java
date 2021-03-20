@@ -38,6 +38,9 @@ public class GameWindow extends Application{
     	Sprite[] sprites = getSprites(); //Load the sprites from the res directory
     	view.setSprites(sprites); //Add the sprites to the view
     	placePlayer(); //Add the player
+    	// NOTE: This has been changed because the player was not being seen with previous design
+    	// Need to make sure that the player cannot be replaced by the enemies
+    	model.addGameCharacters();
     	box.getChildren().add(view);
 		
     	view.draw(); //Paint the view

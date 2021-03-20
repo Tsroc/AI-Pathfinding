@@ -47,14 +47,36 @@ public class CharacterTask extends Task<Void>{
 	 * method execute() of Command will execute when the Character cannot move to
 	 * a random adjacent cell.
 	 */
+	private Personality personality;
 	private Command cmd;
+
+	private int health;
+	private int fear;
+	private int hunger;
 	
-	public CharacterTask(GameModel model, char enemyID, int row, int col) {
+	public CharacterTask(GameModel model, char enemyID, int row, int col, int hunger, int fear, int health) {
 		this.model = model;
 		this.enemyID = enemyID;
 		this.row = row;
 		this.col = col;
 		this.cmd = null;
+
+		this.health = health;
+		this.fear = fear;
+		this.hunger = hunger;
+		System.out.println("Hunger:"+hunger+", Fear:"+fear+", Health:"+health);
+		
+		this.personality = new PersonalityFL(hunger, fear, health);//health, fear, hunger);
+		personality.determinePersonality();
+		System.out.println(personality.toString());
+
+		this.personality = new PersonalityNN(hunger, fear, health);//health, fear, hunger);
+		personality.determinePersonality();
+		System.out.println(personality.toString());
+		
+		cmd = new Pathfinding(enemyID, model, personality, row, col);
+		//((Pathfinding)cmd).printMaze();
+		
 		
 	}
 	
@@ -66,13 +88,6 @@ public class CharacterTask extends Task<Void>{
 		return alive;
 	}
 	
-	public void setCmd(Command cmd) {
-		this.cmd = cmd;
-	}
-	
-	public Command getCmd() {
-		return cmd;
-	}
 	
     @Override
     public Void call() throws Exception {
@@ -84,45 +99,11 @@ public class CharacterTask extends Task<Void>{
     	 */
     	while (alive) {
         	Thread.sleep(SLEEP_TIME);
-        	action();
+        	((Pathfinding)cmd).execute();
+        	//action();
 
     	}
 		return null;
     }
     
-    private void action() {
-		synchronized (model) {
-			//Randomly pick a direction up, down, left or right
-			int temp_row = row, temp_col = col;
-			if (rand.nextBoolean()) {
-				temp_row += rand.nextBoolean() ? 1 : -1;
-			}else {
-				temp_col += rand.nextBoolean() ? 1 : -1;
-			}
-			
-			if(false) {
-				
-			}
-			else if (model.isValidMove(row, col, temp_row, temp_col, enemyID)) {
-				/*
-				 * This fires if the character can move to a cell, i.e. if it is not
-				 * already occupied. You can add extra logic here to invoke
-				 * behaviour when the computer controlled character is in the proximity
-				 * of the player or another character...
-				 */
-				model.set(temp_row, temp_col, enemyID);
-				model.set(row, col, '\u0020');
-				row = temp_row;
-				col = temp_col;
-			}else {  
-				/*
-				 * This fires if a move is not valid, i.e. if someone or some thing 
-				 * is in the way. Use implementations of Command to control how the
-				 * computer controls this character. 
-				 */
-				//System.out.println("Lets not spam console.");
-			}
-		}
-			
-    }
 }
