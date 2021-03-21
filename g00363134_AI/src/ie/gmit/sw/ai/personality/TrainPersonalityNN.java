@@ -1,4 +1,4 @@
-package ie.gmit.sw.ai;
+package ie.gmit.sw.ai.personality;
 
 import ie.gmit.sw.ai.nn.BackpropagationTrainer;
 import ie.gmit.sw.ai.nn.NeuralNetwork;

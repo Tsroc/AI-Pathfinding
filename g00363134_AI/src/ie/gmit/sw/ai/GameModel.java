@@ -110,8 +110,10 @@ public class GameModel {
 		}
 	}
 	
+	// Changed this method to ensure that a valid move is considered within 3 tiles from the edge
 	public boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol, char character){
-		if (toRow <= this.size() - 1 && toCol <= this.size() - 1 && this.get(toRow, toCol) == ' '){
+		if (toRow <= this.size() - 3 && toCol <= this.size() - 3 && 
+				toRow > 3 && toCol > 3 && this.get(toRow, toCol) == ' '){
 			this.set(fromRow, fromCol, '\u0020');
 			this.set(toRow, toCol, character);
 			return true;
@@ -134,16 +136,6 @@ public class GameModel {
 	
 	public int size(){
 		return this.model.length;
-	}
-	
-	public boolean contains(char search) {
-		List<char[]> list = new ArrayList<char[]>();
-		for (char[] c: model)
-			list.addAll(Arrays.asList(c));
-		
-		if(list.contains(search))
-			return true;
-		return false;
 	}
 	
 }

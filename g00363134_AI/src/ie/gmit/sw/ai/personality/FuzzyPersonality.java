@@ -1,19 +1,19 @@
-package ie.gmit.sw.ai;
+package ie.gmit.sw.ai.personality;
 
 import net.sourceforge.jFuzzyLogic.FIS;
 import net.sourceforge.jFuzzyLogic.FunctionBlock;
 import net.sourceforge.jFuzzyLogic.plot.JFuzzyChart;
 import net.sourceforge.jFuzzyLogic.rule.Variable;
 
-public class PersonalityFL implements Personality{
+public class FuzzyPersonality implements Personality{
 	
 	private static final String FILE = "./resources/fuzzy/enemy.fcl";
 	private int hunger;
 	private int fear;
 	private int health;
-	private int personality;
+	private PersonalityType personality;
 
-	public PersonalityFL(int hunger, int fear, int health) {
+	public FuzzyPersonality(int hunger, int fear, int health) {
 		this.hunger = hunger;
 		this.fear = fear;
 		this.health = health;
@@ -35,20 +35,23 @@ public class PersonalityFL implements Personality{
 		Variable action = fb.getVariable("personality");
 		//JFuzzyChart.get().chart(action, action.getDefuzzifier(), true);
 		
-		this.personality = (int)action.getValue();
-		return this.personality;
+		setPersonality((int)action.getValue());
+		return (int)action.getValue();
 	}
 	
-	public String toString() {
-		System.out.print(this.personality + ", ");
-		if(this.personality > 55)
-			return "Aggressive";
-		else if (this.personality > 35)
-			return "Friendly";
-		else if (this.personality >= 0)
-			return "Scared";
+	public void setPersonality(int p) {
+		if(p > 55)
+			this.personality = PersonalityType.AGGRESSIVE;
+		else if (p > 35)
+			this.personality = PersonalityType.FRIENDLY;
+		else if (p >= 0)
+			this.personality = PersonalityType.SCARED;
 		else
-			return "Unknown";
+			this.personality = PersonalityType.UNKNOWN;
+	}
+	
+	public PersonalityType getPersonality() {
+		return personality;
 	}
 	
 }

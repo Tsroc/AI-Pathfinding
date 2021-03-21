@@ -2,6 +2,12 @@ package ie.gmit.sw.ai;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import ie.gmit.sw.ai.command.Command;
+import ie.gmit.sw.ai.command.CommandFactory;
+import ie.gmit.sw.ai.command.AggressiveCommand;
+import ie.gmit.sw.ai.personality.Personality;
+import ie.gmit.sw.ai.personality.PersonalityCreatorType;
+import ie.gmit.sw.ai.personality.PersonalityFactory;
 import javafx.concurrent.Task;
 
 /*
@@ -32,7 +38,7 @@ import javafx.concurrent.Task;
  */
  
 public class CharacterTask extends Task<Void>{
-	private static final int SLEEP_TIME = 300; //Sleep for 300 ms
+	private static final int SLEEP_TIME = 600; //Sleep for 300 ms
 	private static ThreadLocalRandom rand = ThreadLocalRandom.current();
 	private boolean alive = true;
 	private GameModel model;
@@ -47,34 +53,37 @@ public class CharacterTask extends Task<Void>{
 	 * method execute() of Command will execute when the Character cannot move to
 	 * a random adjacent cell.
 	 */
+	private PersonalityFactory pf = PersonalityFactory.getInstance();
+	private CommandFactory cf = CommandFactory.getInstance();
 	private Personality personality;
 	private Command cmd;
-
+	
 	private int health;
 	private int fear;
 	private int hunger;
+	
 	
 	public CharacterTask(GameModel model, char enemyID, int row, int col, int hunger, int fear, int health) {
 		this.model = model;
 		this.enemyID = enemyID;
 		this.row = row;
 		this.col = col;
-		this.cmd = null;
 
 		this.health = health;
 		this.fear = fear;
 		this.hunger = hunger;
 		System.out.println("Hunger:"+hunger+", Fear:"+fear+", Health:"+health);
 		
-		this.personality = new PersonalityFL(hunger, fear, health);//health, fear, hunger);
+		this.personality = pf.getPersonality(PersonalityCreatorType.NN, hunger, fear, health);//health, fear, hunger);
 		personality.determinePersonality();
-		System.out.println(personality.toString());
+		System.out.println(personality.getPersonality());
 
-		this.personality = new PersonalityNN(hunger, fear, health);//health, fear, hunger);
-		personality.determinePersonality();
-		System.out.println(personality.toString());
+		this.cmd = cf.getCommand(personality.getPersonality(), this.enemyID, this.model, this.row, this.col);//health, fear, hunger);
+
+		//System.out.println(personality.toString());
 		
-		cmd = new Pathfinding(enemyID, model, personality, row, col);
+		//cmd = new Pathfinding(this.enemyID, this.model, personality, this.row, this.col);
+		//pfc = new AggressiveCommand(this.enemyID, this.model, personality, this.row, this.col);
 		//((Pathfinding)cmd).printMaze();
 		
 		
@@ -99,8 +108,7 @@ public class CharacterTask extends Task<Void>{
     	 */
     	while (alive) {
         	Thread.sleep(SLEEP_TIME);
-        	((Pathfinding)cmd).execute();
-        	//action();
+        	cmd.execute();
 
     	}
 		return null;

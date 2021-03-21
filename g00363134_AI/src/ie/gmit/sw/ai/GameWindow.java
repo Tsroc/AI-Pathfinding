@@ -38,6 +38,7 @@ public class GameWindow extends Application{
     	Sprite[] sprites = getSprites(); //Load the sprites from the res directory
     	view.setSprites(sprites); //Add the sprites to the view
     	placePlayer(); //Add the player
+
     	// NOTE: This has been changed because the player was not being seen with previous design
     	// Need to make sure that the player cannot be replaced by the enemies
     	model.addGameCharacters();
@@ -87,8 +88,10 @@ public class GameWindow extends Application{
     }
 	
 	private void placePlayer(){  //Place the main player character	
-    	currentRow = (int) (DEFAULT_SIZE * Math.random());
-    	currentCol = (int) (DEFAULT_SIZE * Math.random());
+		// Making sure the player does not spawn at the edge of the map,
+		// This causes problems with the A* implementation. 
+    	currentRow = (int) ((DEFAULT_SIZE-10) * Math.random())+5;
+    	currentCol = (int) ((DEFAULT_SIZE-10) * Math.random())+5;
     	model.set(currentRow, currentCol, PLAYER_ID); //Player is at index 1
     	updateView(); 		
 	}

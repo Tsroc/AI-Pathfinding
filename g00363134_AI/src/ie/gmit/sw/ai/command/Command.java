@@ -1,4 +1,4 @@
-package ie.gmit.sw.ai;
+package ie.gmit.sw.ai.command;
 
 /*
  * Use implementations of this functional interface to specify
