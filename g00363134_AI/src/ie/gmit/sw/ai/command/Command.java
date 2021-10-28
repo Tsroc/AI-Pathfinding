@@ -7,5 +7,5 @@ package ie.gmit.sw.ai.command;
 
 @FunctionalInterface
 public interface Command {
-	public void execute();
+	public int execute(boolean alive);
 }

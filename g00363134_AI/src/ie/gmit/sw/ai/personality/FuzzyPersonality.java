@@ -26,14 +26,12 @@ public class FuzzyPersonality implements Personality{
 		FunctionBlock fb = fis.getFunctionBlock("EnemyLogic");
 		
 		
-		//JFuzzyChart.get().chart(fb); //Display the linguistic variables and terms
 		fis.setVariable("hunger", this.hunger); //Apply a value to a variable
 		fis.setVariable("fear", this.fear); //Apply a value to a variable
 		fis.setVariable("health", this.health); //Apply a value to a variable
 		fis.evaluate(); //Execute the fuzzy inference engine
 		
 		Variable action = fb.getVariable("personality");
-		//JFuzzyChart.get().chart(action, action.getDefuzzifier(), true);
 		
 		setPersonality((int)action.getValue());
 		return (int)action.getValue();
@@ -47,7 +45,7 @@ public class FuzzyPersonality implements Personality{
 		else if (p >= 0)
 			this.personality = PersonalityType.SCARED;
 		else
-			this.personality = PersonalityType.UNKNOWN;
+			this.personality = PersonalityType.FRIENDLY;
 	}
 	
 	public PersonalityType getPersonality() {

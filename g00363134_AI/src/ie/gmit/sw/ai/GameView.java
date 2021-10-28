@@ -73,14 +73,14 @@ public class GameView extends Canvas{
         		int x1 = col * size;
         		int y1 = row * size;
 
-        		char ch = model.get(row, col);
+        		char ch = model.get(row, col).getTile();
         		if (zoom){
         			if (ch > '0') {
         				g.setFill(row == currentRow && col == currentCol ? PLAYER_COLOUR : reds[rand.nextInt(reds.length)]);		
         				g.fillRect(x1, y1, size, size);
         			}
         		}else{
-        			ch = model.get(currentRow - cellpadding + row, currentCol - cellpadding + col);
+        			ch = model.get(currentRow - cellpadding + row, currentCol - cellpadding + col).getTile();
         		}
         		
         		imageIndex = (int) ch;

@@ -5,6 +5,7 @@ module gmit.software {
 	requires jFuzzyLogic;
 	
 	requires java.desktop;
+	requires encog.core;
 	
 	exports ie.gmit.sw.ai;
 	exports ie.gmit.sw.ai.nn;

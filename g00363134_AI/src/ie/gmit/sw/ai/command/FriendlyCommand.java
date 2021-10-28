@@ -2,84 +2,69 @@
 package ie.gmit.sw.ai.command;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import ie.gmit.sw.ai.GameModel;
-import ie.gmit.sw.ai.pathfinder.Graph;
-import ie.gmit.sw.ai.pathfinder.Node;
-import ie.gmit.sw.ai.pathfinder.PathFinder;
-import ie.gmit.sw.ai.personality.Personality;
+import ie.gmit.sw.ai.node.Node;
+import ie.gmit.sw.ai.node.NodePos;
+import ie.gmit.sw.ai.node.NodeTile;
 
 public class FriendlyCommand implements Command{
-	char enemyID;
-	GameModel model;
-	Personality personality;
-	int row;
-	int col;
-	private int player_row, player_col;
 	private static ThreadLocalRandom rand = ThreadLocalRandom.current();
-	
-	Graph graph;
-	PathFinder pf;
-	ArrayList<Node> path;
-	boolean playerFound = false;
+	GameModel model = GameModel.getInstance();
+	char enemyID;
+	private Node pos = new NodePos();
+	private Node tempPos = new NodePos();
+	private List<NodeTile> neighbours; 
+	private List<Character> activePredator = new ArrayList<Character>();
 
-	public FriendlyCommand(char enemyID, GameModel model, int row, int col) {
-		// Need the map and the player
+	public FriendlyCommand(char enemyID, int row, int col) {
 		this.enemyID = enemyID;
-		this.model = model;
-		this.row = row;
-		this.col = col;
-		
-		graph = new Graph(model.getModel());
-		pf = new PathFinder();
-		
+		pos.setPos(row, col);
+		activePredator.add('5');
+
+		// Set the tile with the enemyyID
+		model.get(row, col).setTile(enemyID);
 	}
 	
-	public void printMaze() {
-		for(int r = 0; r < this.model.size(); r++) {
-			for(int c = 0; c < this.model.size(); c++) {
-				System.out.print(this.model.get(r, c));
-			}
-			System.out.println();
-		}
-	}
-
-	private void searchForPlayer() {
-		for(int r = 0; r < model.size(); r++)
-			for(int c = 0; c < model.size(); c++) {
-				char tp = model.get(r, c);
-				if(tp == '1') {
-					player_row = r;
-					player_col = c;
+	public int execute(boolean alive) {
+		if(alive) {
+			// Friendly npc's are destroyed by aggressive npc's.
+			// If it is a neighbour, it has attacked.
+			neighbours = model.getNeighbours(model.get(pos.getRow(), pos.getCol()));
+			for (int i = 0; i < neighbours.size(); i++) {
+				if(activePredator.contains(neighbours.get(i).getTile())) {
+					return triggerDeath();
 				}
 			}
+
+			   synchronized (model) {
+				tempPos.setPos(pos.getRow(), pos.getCol());
+				//Randomly pick a direction up, down, left or right
+				if (rand.nextBoolean()) {
+					tempPos.setRow(tempPos.getRow()  + (rand.nextBoolean() ? 1 : -1));
+				}else {
+					tempPos.setCol(tempPos.getCol()  + (rand.nextBoolean() ? 1 : -1));
+				}
+				
+				// Randomly wanders.
+				if (model.isValidMove(pos.getRow(), pos.getCol(), tempPos.getRow(), tempPos.getCol(), enemyID)) {
+					//model.get(tempPos.getRow(), tempPos.getCol()).setTile(this.enemyID);
+					//model.get(pos.getRow(), pos.getCol()).setTile('\u0020');
+					pos.setPos(tempPos.getRow(), tempPos.getCol());
+				}
+			   }
+		}else {
+			return triggerDeath();
+		}
+		return 1;
+       	
 	}
-	
-	public void execute() {
-		int temp_row = this.row, temp_col = this.col;
-		
-       	synchronized (model) {
-    		//Randomly pick a direction up, down, left or right
-    		if (rand.nextBoolean()) {
-        		temp_row += rand.nextBoolean() ? 1 : -1;
-        	}else {
-        		temp_col += rand.nextBoolean() ? 1 : -1;
-        	}
-        	
-        	if (model.isValidMove(row, col, temp_row, temp_col, enemyID)) {
-        		/*
-        		 * This fires if the character can move to a cell, i.e. if it is not
-        		 * already occupied. You can add extra logic here to invoke
-        		 * behaviour when the computer controlled character is in the proximity
-        		 * of the player or another character...
-        		 */
-        		model.set(temp_row, temp_col, enemyID);
-        		model.set(row, col, '\u0020');
-        		row = temp_row;
-        		col = temp_col;
-        	}
-       	}
+
+	private int triggerDeath() {
+		model.set(pos.getRow(), pos.getCol(), '\u0020');
+		return 0;
 	}
 	
 }

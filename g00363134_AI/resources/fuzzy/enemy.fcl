@@ -10,27 +10,28 @@ FUNCTION_BLOCK EnemyLogic
 	END_VAR
 	
 	FUZZIFY hunger 
-		TERM starving := (0, 1) (20, 1) (30, 0);
-		TERM satisfied := trian 20 50 80;
-		TERM full := (70, 0) (80, 1) (100, 1);
+		TERM starving := (0, 1) (15, 1) (20, 0);
+		TERM hungry := trian 15 25 40;
+		TERM satisfied := (30, 0) (40, 1) (100, 0);
+
 	END_FUZZIFY
 
 	FUZZIFY fear 
-		TERM brave := (0, 1) (15, 1) (25, 0);
-		TERM neutral := trian 15 50 85;
-		TERM coward := (70, 0) (85, 1) (100, 1);
+		TERM brave := (0, 1) (60, 1) (70, 0);
+		TERM cautious := trian 60 75 85;
+		TERM coward := (80, 0) (85, 1) (100, 1);
 	END_FUZZIFY
 
 	FUZZIFY health 
-		TERM injured := (0, 1) (15, 1) (25, 0);
-		TERM well := trian 15 50 85;
-		TERM healthy := (70, 0) (85, 1) (100, 1);
+		TERM injured := (0, 1) (15, 1) (20, 0);
+		TERM low := trian 15 20 40;
+		TERM healthy:= (30, 0) (40, 1) (100, 0);
 	END_FUZZIFY
 	
 	DEFUZZIFY personality 
-		TERM skittish := (0, 1) (30, 0);
+		TERM skittish := (0, 1) (33, 0);
 		TERM friendly  := trian 25.0 50.0 75.0;
-		TERM aggressive := (70, 0) (100, 1);
+		TERM aggressive := (66, 0) (100, 1);
 		METHOD : COG;
 		DEFAULT := 50;
 	END_DEFUZZIFY
@@ -40,11 +41,14 @@ FUNCTION_BLOCK EnemyLogic
 		ACT : MIN;
 		ACCU : MAX;
 		RULE 1: IF health is injured OR fear is coward THEN personality is skittish;
-		RULE 2: IF fear is brave THEN personality is friendly;
-		RULE 3: IF hunger is starving THEN personality is aggressive;
-		RULE 4: IF hunger is satisfied AND fear is neutral AND health is well OR health is healthy THEN personality is friendly;
-		RULE 6: IF hunger is starving AND fear is brave AND health is injured THEN personality is skittish;
-		RULE 7: IF hunger is starving AND fear is brave AND health is well THEN personality is aggressive;
+		RULE 2: IF hunger is starving THEN personality is aggressive;
+		RULE 3: IF health is low AND fear is coward THEN personality is skittish;
+		RULE 4: IF health is healthy AND fear is cautious AND hunger is hungry THEN personality is skittish;		
+		RULE 5: IF hunger is starving AND fear is cautious THEN personality is aggressive;
+		RULE 6: IF hunger is hungry AND fear is cautious AND health is low THEN personality is aggressive;
+		RULE 7: IF hunger is hungry AND fear is cautious AND health is healthy THEN personality is aggressive;
+		RULE 8: IF fear is brave OR hunger is satisfied OR health is healthy THEN personality is friendly;
+		RULE 9: IF hunger is satisfied AND fear is brave AND health is healthy OR health is healthy THEN personality is friendly;
 	END_RULEBLOCK
 
 END_FUNCTION_BLOCK

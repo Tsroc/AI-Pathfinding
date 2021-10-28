@@ -1,10 +1,12 @@
 package ie.gmit.sw.ai;
 
-import ie.gmit.sw.ai.personality.TrainPersonalityNN;
+import java.io.IOException;
+
+import ie.gmit.sw.ai.personality.EncogNeuralNetwork;
 import javafx.application.Application;
 
 public class Runner {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		/*
 		 * PLEASE READ CAREFULLY
 		 * ---------------------
@@ -20,8 +22,10 @@ public class Runner {
 		 * CLASSPATH). 
 		 */
 		
-		  //Add long-running initialisation instructions here.
-		TrainPersonalityNN.getInstance().train();
+		//Add long-running initialisation instructions here.
+		EncogNeuralNetwork.getInstance();
+		EncogNeuralNetwork.train();
+		//TrainNeuralNetwork.getInstance().train();
 		
 		
 		/*

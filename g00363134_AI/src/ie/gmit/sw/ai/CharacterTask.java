@@ -1,10 +1,10 @@
 package ie.gmit.sw.ai;
 
+
 import java.util.concurrent.ThreadLocalRandom;
 
 import ie.gmit.sw.ai.command.Command;
 import ie.gmit.sw.ai.command.CommandFactory;
-import ie.gmit.sw.ai.command.AggressiveCommand;
 import ie.gmit.sw.ai.personality.Personality;
 import ie.gmit.sw.ai.personality.PersonalityCreatorType;
 import ie.gmit.sw.ai.personality.PersonalityFactory;
@@ -38,62 +38,62 @@ import javafx.concurrent.Task;
  */
  
 public class CharacterTask extends Task<Void>{
-	private static final int SLEEP_TIME = 600; //Sleep for 300 ms
 	private static ThreadLocalRandom rand = ThreadLocalRandom.current();
-	private boolean alive = true;
-	private GameModel model;
+	private static final int SLEEP_TIME = 300; 
+	private PersonalityFactory pf = PersonalityFactory.getInstance();
+	private CommandFactory cf = CommandFactory.getInstance();
+	private Personality personality;
+	private Command cmd;
+	private int alive = 1;
 	private char enemyID;
-	private int row;
-	private int col;
+	private double health;
+	private double healthDecay = 0.5;
 	
-
 	/*
 	 * Configure each character with its own action. Use this functional interface
 	 * as a hook or template to connect to your fuzzy logic and neural network. The
 	 * method execute() of Command will execute when the Character cannot move to
 	 * a random adjacent cell.
 	 */
-	private PersonalityFactory pf = PersonalityFactory.getInstance();
-	private CommandFactory cf = CommandFactory.getInstance();
-	private Personality personality;
-	private Command cmd;
 	
-	private int health;
-	private int fear;
-	private int hunger;
-	
-	
-	public CharacterTask(GameModel model, char enemyID, int row, int col, int hunger, int fear, int health) {
-		this.model = model;
-		this.enemyID = enemyID;
-		this.row = row;
-		this.col = col;
-
+	public CharacterTask(int FLTrigger, int row, int col, int hunger, int fear, int health) {
 		this.health = health;
-		this.fear = fear;
-		this.hunger = hunger;
-		System.out.println("Hunger:"+hunger+", Fear:"+fear+", Health:"+health);
 		
-		this.personality = pf.getPersonality(PersonalityCreatorType.NN, hunger, fear, health);//health, fear, hunger);
+		if(FLTrigger == 1)
+			this.personality = pf.getPersonality(PersonalityCreatorType.FL, hunger, fear, health);//health, fear, hunger);
+		else
+			this.personality = pf.getPersonality(PersonalityCreatorType.EG, hunger, fear, health);//health, fear, hunger);
+		
 		personality.determinePersonality();
-		System.out.println(personality.getPersonality());
-
-		this.cmd = cf.getCommand(personality.getPersonality(), this.enemyID, this.model, this.row, this.col);//health, fear, hunger);
-
-		//System.out.println(personality.toString());
 		
-		//cmd = new Pathfinding(this.enemyID, this.model, personality, this.row, this.col);
-		//pfc = new AggressiveCommand(this.enemyID, this.model, personality, this.row, this.col);
-		//((Pathfinding)cmd).printMaze();
+		// Decide on the enemyID - based on personality
+		switch(personality.getPersonality()) {
+			case AGGRESSIVE:
+				this.enemyID = '\u0035';
+				break;
+			case SCARED:
+				if(rand.nextBoolean())
+					this.enemyID = '\u0034';
+				else
+					this.enemyID = '\u0036';
+				break;
+			case FRIENDLY:
+				if(rand.nextBoolean())
+					this.enemyID = '\u0032';
+				else
+					this.enemyID = '\u0033';
+				break;
+		}
 		
-		
+		this.cmd = cf.getCommand(personality.getPersonality(), enemyID, row, col);//health, fear, hunger);
+		System.out.printf("{Hunger: %d, Fear: %d, Health: %d}\n\t%s NPC created!\n", hunger, fear, health, personality.getPersonality() );
 	}
 	
 	public int getSleepTime() {
 		return SLEEP_TIME;
 	}
 	
-	public boolean getAlive() {
+	public int getAlive() {
 		return alive;
 	}
 	
@@ -106,11 +106,25 @@ public class CharacterTask extends Task<Void>{
     	 * to true. You can set this value to false to "kill" the game 
     	 * character if necessary (or maybe unnecessary...).
     	 */
-    	while (alive) {
+    	
+    	while (alive == 1) {
+			
         	Thread.sleep(SLEEP_TIME);
-        	cmd.execute();
+        	try {
+				alive = cmd.execute(true);
+        	}catch(Exception e) {
+        		//System.out.println(e.toString());
+        	}
 
+    		health -= healthDecay;
+			if (health <= 0){
+				alive = 0;
+				cmd.execute(false);
+				break;
+			}
+        	
     	}
+    	System.out.println("Died!");
 		return null;
     }
     

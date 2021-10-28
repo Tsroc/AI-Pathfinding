@@ -1,108 +1,116 @@
 package ie.gmit.sw.ai.command;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import ie.gmit.sw.ai.GameModel;
-import ie.gmit.sw.ai.pathfinder.Graph;
-import ie.gmit.sw.ai.pathfinder.Node;
+import ie.gmit.sw.ai.node.Node;
+import ie.gmit.sw.ai.node.NodePos;
+import ie.gmit.sw.ai.node.NodeTile;
+import ie.gmit.sw.ai.pathfinder.DepthLimitedSearch;
 import ie.gmit.sw.ai.pathfinder.PathFinder;
-import ie.gmit.sw.ai.personality.Personality;
 
 public class ScaredCommand implements Command{
-	char enemyID;
-	GameModel model;
-	Personality personality;
-	int row;
-	int col;
-	private int player_row, player_col;
 	private static ThreadLocalRandom rand = ThreadLocalRandom.current();
-	
-	Graph graph;
+	GameModel model = GameModel.getInstance();
 	PathFinder pf;
-	ArrayList<Node> path;
-	boolean playerFound = false;
+	DepthLimitedSearch dls;
+	char enemyID;
+	private Node pos = new NodePos();
+	private Node tempPos = new NodePos();
+	private Node predator = new NodePos();
+	private List<NodeTile> path;
+	private List<NodeTile> neighbours; 
+	private List<Character> activePredator = new ArrayList<Character>();
+	boolean predatorFound = false;
 
-	public ScaredCommand(char enemyID, GameModel model, int row, int col) {
-		// Need the map and the player
+	public ScaredCommand(char enemyID, int row, int col) {
 		this.enemyID = enemyID;
-		this.model = model;
-		this.row = row;
-		this.col = col;
-		graph = new Graph(model.getModel());
+		pos.setPos(row, col);
+		activePredator.add('5');
 		pf = new PathFinder();
-		
+		dls = new DepthLimitedSearch();
+
+		// Set the tile with the enemyyID
+		model.get(row, col).setTile(enemyID);
 	}
 	
-	public void printMaze() {
-		for(int r = 0; r < this.model.size(); r++) {
-			for(int c = 0; c < this.model.size(); c++) {
-				System.out.print(this.model.get(r, c));
-			}
-			System.out.println();
-		}
-	}
-
+	// Uses a depth limited search
 	private void searchForPlayer() {
-		for(int r = 0; r < model.size(); r++)
-			for(int c = 0; c < model.size(); c++) {
-				char tp = model.get(r, c);
-				if(tp == '1') {
-					player_row = r;
-					player_col = c;
-				}
-			}
+		predatorFound = dls.search(model.get(pos.getRow(), pos.getCol()), 4, 0);
+		if(predatorFound) {
+			predator.setPos(dls.getRow(), dls.getCol());
+			//System.out.println("Found" + predator.getRow() + " " + predator.getCol());
+		}
 	}
 	
-	public void execute() {
-		int temp_row = this.row, temp_col = this.col;
-		
-		if(!playerFound) {
-			// Randomly moves until player is found(in range)
-			synchronized (model) {
-			//Randomly pick a direction up, down, left or right
-				if (rand.nextBoolean()) {
-					temp_row += rand.nextBoolean() ? 1 : -1;
-				}else {
-					temp_col += rand.nextBoolean() ? 1 : -1;
-				}
-
-				if (model.isValidMove(row, col, temp_row, temp_col, enemyID)) {
-					/*
-					* This fires if the character can move to a cell, i.e. if it is not
-					* already occupied. You can add extra logic here to invoke
-					* behaviour when the computer controlled character is in the proximity
-					* of the player or another character...
-					*/
-					model.set(temp_row, temp_col, enemyID);
-					model.set(row, col, '\u0020');
-					row = temp_row;
-					col = temp_col;
-				}
-			}
-			searchForPlayer();
+	public int execute(boolean alive) {
+		if(alive) {
+			tempPos.setPos(pos.getRow(), pos.getCol());
 			
-			path = pf.requestEscape(graph.get(this.row, this.col), graph.get(player_row, player_col), graph);
-			if(path.get(0).f_cost() < 150) {
-				playerFound = true;
+			// Checks if its been attacked.
+			neighbours = model.getNeighbours(model.get(pos.getRow(), pos.getCol()));
+			for (int i = 0; i < neighbours.size(); i++) {
+				if(activePredator.contains(neighbours.get(i).getTile())) {
+					return triggerDeath();
+				}
+				
 			}
+			
+			if(!predatorFound) {
+				searchForPlayer();
+				if(predatorFound) {
+					path = pf.requestEscape(model.get(pos.getRow(), pos.getCol()), model.get(predator.getRow(), predator.getCol()));
+				}
+				else {
+				   synchronized (model) {
+						//Randomly pick a direction up, down, left or right
+						if (rand.nextBoolean()) {
+							tempPos.setRow(tempPos.getRow()  + (rand.nextBoolean() ? 1 : -1));
+						}else {
+							tempPos.setCol(tempPos.getCol()  + (rand.nextBoolean() ? 1 : -1));
+						}
+						
+						// Randomly wanders.
+						if (model.isValidMove(pos.getRow(), pos.getCol(), tempPos.getRow(), tempPos.getCol(), enemyID)) {
+							//model.get(tempPos.getRow(), tempPos.getCol()).setTile(this.enemyID);
+							//model.get(pos.getRow(), pos.getCol()).setTile('\u0020');
+							pos.setPos(tempPos.getRow(), tempPos.getCol());
+						}
+					}	
+				}
+			}
+			
+			if(predatorFound) {
+				flee();
+			}
+		}else {
+			return triggerDeath();
 		}
-		
-		if(playerFound && !path.isEmpty()) {
-
+		return 1;
+	}
+	
+	private void flee() {
+		synchronized (model) {
+			// Already determined that this will be a value move.
+			model.set(pos.getRow(), pos.getCol(), '\u0020');
 			model.set(path.get(0).getRow(), path.get(0).getCol(), enemyID);
-			model.set(temp_row, temp_col, '\u0020');
-			this.col = path.get(0).getCol();
-			this.row = path.get(0).getRow();
+			pos.setPos(path.get(0).getRow(), path.get(0).getCol());
 			path.get(0).resetNode();
 			path.remove(0);
-			
-			if(path.isEmpty()) {
-				playerFound = false;
-				path = null;
-			}
-				
 		}
+		
+		// exiting loop before path ends to avoid NullPointerException.
+		if(path.size() == 1) {
+			predatorFound = false;
+			path = null;
+		}
+	}
+
+	private int triggerDeath() {
+		model.set(pos.getRow(), pos.getCol(), '\u0020');
+		return 0;
 	}
 	
 }

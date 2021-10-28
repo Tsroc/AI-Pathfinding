@@ -13,8 +13,8 @@ public class PersonalityFactory {
 
 	public Personality getPersonality(PersonalityCreatorType p, int hunger, int fear, int health) {
 		return switch (p) {
-			case NN -> new NeuralPersonality(hunger, fear, health);
 			case FL -> new FuzzyPersonality(hunger, fear, health);
+			case EG -> new EncogPersonality(hunger, fear, health);
 		};
 	}
 }

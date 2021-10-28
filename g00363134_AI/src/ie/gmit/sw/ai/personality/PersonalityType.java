@@ -1,5 +1,5 @@
 package ie.gmit.sw.ai.personality;
 
 public enum PersonalityType {
-	SCARED, FRIENDLY, AGGRESSIVE, UNKNOWN
+	SCARED, FRIENDLY, AGGRESSIVE 
 }

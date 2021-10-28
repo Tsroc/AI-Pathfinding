@@ -1,5 +1,10 @@
 package ie.gmit.sw.ai;
 
+import java.util.List;
+
+import ie.gmit.sw.ai.node.Node;
+import ie.gmit.sw.ai.node.NodePos;
+import ie.gmit.sw.ai.node.NodeTile;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
@@ -16,13 +21,14 @@ public class GameWindow extends Application{
 	private static final int DEFAULT_SIZE = 60;
 	private static final int IMAGE_COUNT = 6;
 	private GameView view;
-	private GameModel model;
-	private int currentRow;
-	private int currentCol;
+	private Node pos = new NodePos();
+	private Node tempPos = new NodePos();
+	private GameModel model = GameModel.getInstance();
+	private List<NodeTile> neighbours; 
+	private boolean alive = true;
 
 	@Override
     public void start(Stage stage) throws Exception {
-		model = new GameModel(DEFAULT_SIZE); //Create a model
     	view = new GameView(model); //Create a view of the model
 
     	stage.setTitle("GMIT - B.Sc. in Computing (Software Development) - AI Assignment 2021");
@@ -53,36 +59,46 @@ public class GameWindow extends Application{
 	
     public void keyPressed(KeyEvent e) { //Handle key events
     	KeyCode key = e.getCode(); 
-    	/*
-        if (key == KeyCode.RIGHT && currentCol < DEFAULT_SIZE - 1) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol + 1, PLAYER_ID)) currentCol++;   		
-        }else if (key == KeyCode.LEFT && currentCol > 0) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol - 1, PLAYER_ID)) currentCol--;	
-        }else if (key == KeyCode.UP && currentRow > 0) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow - 1, currentCol, PLAYER_ID)) currentRow--;
-        }else if (key == KeyCode.DOWN && currentRow < DEFAULT_SIZE - 1) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow + 1, currentCol, PLAYER_ID)) currentRow++;        	  	
-        }else if (key == KeyCode.Z){
-        	view.toggleZoom();
-        }else{
-        	return;
-        }
-        */
+		tempPos.setPos(pos.getRow(), pos.getCol());
     	
-    	// Changing controls. - don't forget to revert this...
-        if (key == KeyCode.D && currentCol < DEFAULT_SIZE - 1) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol + 1, PLAYER_ID)) currentCol++;   		
-        }else if (key == KeyCode.A && currentCol > 0) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow, currentCol - 1, PLAYER_ID)) currentCol--;	
-        }else if (key == KeyCode.W && currentRow > 0) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow - 1, currentCol, PLAYER_ID)) currentRow--;
-        }else if (key == KeyCode.S && currentRow < DEFAULT_SIZE - 1) {
-        	if (model.isValidMove(currentRow, currentCol, currentRow + 1, currentCol, PLAYER_ID)) currentRow++;        	  	
-        }else if (key == KeyCode.Z){
-        	view.toggleZoom();
-        }else{
-        	return;
-        }
+		if(alive) {
+			// Changing controls to allow for WASD.
+			if ((key == KeyCode.D && pos.getCol() < DEFAULT_SIZE - 1)|| 
+				(key == KeyCode.RIGHT && pos.getCol() < DEFAULT_SIZE - 1)){
+				if (model.isValidMove(pos.getRow(), pos.getCol(), pos.getRow(), pos.getCol() + 1, PLAYER_ID)) { 
+					tempPos.setCol(tempPos.getCol() + 1);
+					pos.setPos(tempPos.getRow(), tempPos.getCol());
+				}
+			}else if ((key == KeyCode.A && pos.getCol() > 0)||
+					(key == KeyCode.LEFT && pos.getCol() < DEFAULT_SIZE - 1)){
+				if (model.isValidMove(pos.getRow(), pos.getCol(), pos.getRow(), pos.getCol() - 1, PLAYER_ID)) {
+					tempPos.setCol(tempPos.getCol() - 1);
+					pos.setPos(tempPos.getRow(), tempPos.getCol());
+				}
+			}else if ((key == KeyCode.W && pos.getRow() > 0)||
+					(key == KeyCode.UP && pos.getRow() < DEFAULT_SIZE - 1)){
+				if (model.isValidMove(pos.getRow(), pos.getCol(), pos.getRow() - 1, pos.getCol(), PLAYER_ID)) {
+					tempPos.setRow(tempPos.getRow() - 1);
+					pos.setPos(tempPos.getRow(), tempPos.getCol());
+				}        	
+			}else if ((key == KeyCode.S && pos.getRow() < DEFAULT_SIZE - 1)||
+					(key == KeyCode.DOWN && pos.getRow() < DEFAULT_SIZE - 1)){
+				if (model.isValidMove(pos.getRow(), pos.getCol(), pos.getRow() + 1, pos.getCol(), PLAYER_ID)) {
+					tempPos.setRow(tempPos.getRow() + 1);
+					pos.setPos(tempPos.getRow(), tempPos.getCol());
+				}        	
+			}else if (key == KeyCode.Z){
+				view.toggleZoom();
+			}else{
+				return;
+			}
+		} else {
+			if (key == KeyCode.Z){
+				view.toggleZoom();
+			} else {
+				System.out.println("You are dead!");
+			}
+		}
         
         updateView();       
     }
@@ -90,15 +106,25 @@ public class GameWindow extends Application{
 	private void placePlayer(){  //Place the main player character	
 		// Making sure the player does not spawn at the edge of the map,
 		// This causes problems with the A* implementation. 
-    	currentRow = (int) ((DEFAULT_SIZE-10) * Math.random())+5;
-    	currentCol = (int) ((DEFAULT_SIZE-10) * Math.random())+5;
-    	model.set(currentRow, currentCol, PLAYER_ID); //Player is at index 1
+    	pos.setRow((int) ((DEFAULT_SIZE-6) * Math.random())+3);
+    	pos.setCol((int) ((DEFAULT_SIZE-6) * Math.random())+3);
+    	model.set(pos.getRow(), pos.getCol(), PLAYER_ID); //Player is at index 1
     	updateView(); 		
 	}
 	
 	private void updateView(){ 
-		view.setCurrentRow(currentRow);
-		view.setCurrentCol(currentCol);
+		if(alive) {
+			neighbours = model.getNeighbours(model.get(pos.getRow(), pos.getCol()));
+			for (int i = 0; i < neighbours.size(); i++) {
+				if(neighbours.get(i).getTile() == '5') {
+					model.set(pos.getRow(), pos.getCol(), '\u0020');
+					alive = false;
+				}
+			}
+		}
+		
+		view.setCurrentRow(pos.getRow());
+		view.setCurrentCol(pos.getCol());
 	}
 	
 	private Sprite[] getSprites() throws Exception{

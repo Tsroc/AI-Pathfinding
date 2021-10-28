@@ -1,14 +1,13 @@
 package ie.gmit.sw.ai;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
+import ie.gmit.sw.ai.node.NodeTile;
 import javafx.concurrent.Task;
 
 /*
@@ -24,20 +23,24 @@ import javafx.concurrent.Task;
 public class GameModel {
 	private static final int MAX_CHARACTERS = 10;
 	private ThreadLocalRandom rand = ThreadLocalRandom.current();
-	private char[][] model;
+	// Size has been hard coded. This is not ideal but I wanted to make this class a singleton
+	private NodeTile[][] model = new NodeTile[60][60];
 	
 	private final ExecutorService exec = Executors.newFixedThreadPool(MAX_CHARACTERS, e -> {
         Thread t = new Thread(e);
         t.setDaemon(true);
         return t ;
     });
-	
-	public GameModel(int dimension){
-		model = new char[dimension][dimension];
+
+	private static GameModel gm = new GameModel();
+
+	private GameModel() {
 		init();
 		carve();
-    	// NOTE: This has been changed because the player was not being seen with previous design
-		//addGameCharacters();
+	}
+
+	public static GameModel getInstance() {
+		return gm;
 	}
 	
 	public void tearDown() {
@@ -50,7 +53,7 @@ public class GameModel {
 	private void init(){
 		for (int row = 0; row < model.length; row++){
 			for (int col = 0; col < model[row].length; col++){
-				model[row][col] = '\u0030'; //\u0030 = 0x30 = 0 (base 10) = A hedge
+				model[row][col] = new NodeTile(true, row, col, '\u0030'); //\u0030 = 0x30 = 0 (base 10) = A hedge
 			}
 		}
 	}
@@ -58,17 +61,21 @@ public class GameModel {
 	/*
 	 * Carve paths through the hedge to create passages.
 	 */
-	public void carve(){
+	private void carve(){
 		for (int row = 0; row < model.length; row++){
 			for (int col = 0; col < model[row].length - 1; col++){
 				if (row == 0) {
-					model[row][col + 1] = '\u0020';
+					this.get(row, col + 1).setTile('\u0020'); 
+					this.get(row, col + 1).setWall(false); 
 				}else if (col == model.length - 1) {
-					model[row - 1][col] = '\u0020';
+					this.get(row - 1, col).setTile('\u0020'); 
+					this.get(row - 1, col).setWall(false); 
 				}else if (rand.nextBoolean()) {
-					model[row][col + 1] = '\u0020';
+					this.get(row, col + 1).setTile('\u0020'); 
+					this.get(row, col + 1).setWall(false); 
 				}else {
-					model[row - 1][col] = '\u0020';
+					this.get(row - 1, col).setTile('\u0020'); 
+					this.get(row - 1, col).setWall(false); 
 				}
 			}
 		}
@@ -77,34 +84,40 @@ public class GameModel {
 	//private void addGameCharacters() {
 	public void addGameCharacters() {
 		Collection<Task<Void>> tasks = new ArrayList<>();
-		addGameCharacter(tasks, '\u0032', '0', MAX_CHARACTERS / 5); //2 is a Red Enemy, 0 is a hedge
-		addGameCharacter(tasks, '\u0033', '0', MAX_CHARACTERS / 5); //3 is a Pink Enemy, 0 is a hedge
-		addGameCharacter(tasks, '\u0034', '0', MAX_CHARACTERS / 5); //4 is a Blue Enemy, 0 is a hedge
-		addGameCharacter(tasks, '\u0035', '0', MAX_CHARACTERS / 5); //5 is a Red Green Enemy, 0 is a hedge
-		addGameCharacter(tasks, '\u0036', '0', MAX_CHARACTERS / 5); //6 is a Orange Enemy, 0 is a hedge
-		//addGameCharacter(tasks, '\u0036', '0', 1); //6 is a Orange Enemy, 0 is a hedge
+		
+		// Will use NN to determine personality. 
+		// Aggression is primarily determined by hunger, hunger will be kept above 60 for these.
+		// Should create 2x Friendly NPCs
+		addGameCharacter(tasks, 0, '0', MAX_CHARACTERS / 5, rand.nextInt(40) + 60, rand.nextInt(10), rand.nextInt(60) + 40); //2 is a Red Enemy, 0 is a hedge
+		addGameCharacter(tasks, 0, '0', MAX_CHARACTERS / 5, rand.nextInt(40) + 60, rand.nextInt(10), rand.nextInt(60) + 40); //3 is a Pink Enemy, 0 is a hedge
+		// Should create 2x Scared NPCs
+		addGameCharacter(tasks, 0, '0', MAX_CHARACTERS / 5, rand.nextInt(40) + 60, rand.nextInt(10) + 90, rand.nextInt(30)+20); //4 is a Blue Enemy, 0 is a hedge
+		addGameCharacter(tasks, 0, '0', MAX_CHARACTERS / 5, rand.nextInt(40) + 60, rand.nextInt(10) + 90, rand.nextInt(30)+20); //6 is a Orange Enemy, 0 is a hedge
+		// Aggressive : '\u0035',
+		// Using FuzzyLogic to ensure 2x Aggressive NPCs are created.
+		addGameCharacter(tasks, 1, '0', 2, 15, 10, 90); //5 is a Red Green Enemy, 0 is a hedge
+
+		/*
+		for(int i = 0; i < 10; i++)
+			addGameCharacter(tasks, 1, '0', 1, rand.nextInt(101), rand.nextInt(101), rand.nextInt(101)); //6 is a Orange Enemy, 0 is a hedge
+			*/
 		tasks.forEach(exec::execute);
 	}
 	
-	private void addGameCharacter(Collection<Task<Void>> tasks, char enemyID, char replace, int number){
+	private void addGameCharacter(Collection<Task<Void>> tasks, int FLTrigger, char replace, int number, int hunger, int fear, int health){
 		int counter = 0;
 		
 		while (counter < number){
-			int row = rand.nextInt(model.length);
-			int col = rand.nextInt(model[0].length);
+			int row = rand.nextInt(model.length-6)+3;
+			int col = rand.nextInt(model[0].length-6)+3;
 			
-			if (model[row][col] == replace){
-				model[row][col] = enemyID;
+			if (model[row][col].getTile() == replace){
 
 				/*
 				 * IMPORTANT! Change the following to parameterise your CharacterTask with an instance of
 				 * Command. The constructor call below is only parameterised with a lambda expression. 
 				 */
-				//tasks.add(new CharacterTask(this, enemyID, row, col, ()-> System.out.println("Action executing!")));
-				
-				// Command has no connection with the CharacterTask, it should be based off values in the CharacterTask
-				//tasks.add(new CharacterTaskFuzzy(this, enemyID, row, col, rand.nextInt(100), rand.nextInt(100), rand.nextInt(100))); 
-				tasks.add(new CharacterTask(this, enemyID, row, col, rand.nextInt(101), rand.nextInt(101), rand.nextInt(101))); 
+				tasks.add(new CharacterTask(FLTrigger, row, col, hunger, fear, health)); 
 				counter++;
 			}
 		}
@@ -112,8 +125,8 @@ public class GameModel {
 	
 	// Changed this method to ensure that a valid move is considered within 3 tiles from the edge
 	public boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol, char character){
-		if (toRow <= this.size() - 3 && toCol <= this.size() - 3 && 
-				toRow > 3 && toCol > 3 && this.get(toRow, toCol) == ' '){
+		if ((toRow <= this.size() - 3 && toCol <= this.size() - 3 && 
+				toRow > 3 && toCol > 3) && this.get(toRow, toCol).getTile() == ' '){
 			this.set(fromRow, fromCol, '\u0020');
 			this.set(toRow, toCol, character);
 			return true;
@@ -122,20 +135,32 @@ public class GameModel {
 		}
 	}
 	
-	public char[][] getModel(){
-		return this.model;
-	}
-	
-	public char get(int row, int col){
+	public NodeTile get(int row, int col){
 		return this.model[row][col];
 	}
 	
 	public void set(int row, int col, char c){
-		this.model[row][col] = c;
+		this.model[row][col].setTile(c);
 	}
 	
 	public int size(){
 		return this.model.length;
+	}
+
+	public List<NodeTile> getNeighbours(NodeTile n){
+		List<NodeTile> neighbours = new ArrayList<NodeTile>();
+		
+		// Was causing errors when attempting to add nodes outside of graph.
+		if(n.getRow() > 1)
+			neighbours.add( model[n.getRow() - 1][n.getCol()] );
+		if(n.getRow() < model.length-2)
+			neighbours.add(model[n.getRow() + 1][n.getCol()]);
+		if(n.getCol() > 1)
+			neighbours.add(model[n.getRow()][n.getCol() - 1]);
+		if(n.getCol() < model.length-2)
+			neighbours.add(model[n.getRow()][n.getCol() + 1]);
+		
+		return neighbours;
 	}
 	
 }

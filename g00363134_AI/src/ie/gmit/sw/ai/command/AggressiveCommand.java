@@ -1,110 +1,120 @@
 package ie.gmit.sw.ai.command;
 
 import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 import ie.gmit.sw.ai.GameModel;
-import ie.gmit.sw.ai.pathfinder.Graph;
-import ie.gmit.sw.ai.pathfinder.Node;
+import ie.gmit.sw.ai.node.NodeTile;
+import ie.gmit.sw.ai.node.Node;
+import ie.gmit.sw.ai.node.NodePos;
 import ie.gmit.sw.ai.pathfinder.PathFinder;
-import ie.gmit.sw.ai.personality.Personality;
 
 public class AggressiveCommand implements Command{
-	char enemyID;
-	GameModel model;
-	Personality personality;
-	int row;
-	int col;
-	private int player_row, player_col;
-	private static ThreadLocalRandom rand = ThreadLocalRandom.current();
-	
-	Graph graph;
-	PathFinder pf;
-	ArrayList<Node> path;
-	boolean playerFound = false;
+	private GameModel model = GameModel.getInstance();
+	private char enemyID;
+	private Node pos = new NodePos();
+	private Node tempPos = new NodePos();
+	private Node prey = new NodePos();
+	private PathFinder pf;
+	private List<NodeTile> path;
+	private List<Character> activePrey = new ArrayList<Character>();
+	private boolean preyFound;
+	private final int MAX_SEARCH = 20;
+	private int currentSearch = 0;
 
-	public AggressiveCommand(char enemyID, GameModel model, int row, int col) {
-		// Need the map and the player
+	public AggressiveCommand(char enemyID, int row, int col) {
 		this.enemyID = enemyID;
-		this.model = model;
-		this.row = row;
-		this.col = col;
+		pos.setPos(row, col);
+		preyFound = false;
 		
-		graph = new Graph(model.getModel());
 		pf = new PathFinder();
+		// Add prey...
+		activePrey.add('1'); 
+		activePrey.add('2'); 
+		activePrey.add('3'); 
+		activePrey.add('4'); 
+		activePrey.add('6'); 
 		
+		// Set the tile with the enemyyID
+		model.get(row, col).setTile(enemyID);
 	}
 	
-	public void printMaze() {
-		for(int r = 0; r < this.model.size(); r++) {
-			for(int c = 0; c < this.model.size(); c++) {
-				System.out.print(this.model.get(r, c));
-			}
-			System.out.println();
-		}
-	}
-
-	private void searchForPlayer() {
+	// Need a different search pattern for this, this is slow
+	// IterativeDeepeining has not been working, recursive methods causing issues.
+	private void searchForPrey() {
+		boolean found = false;
+		NodeTile node;
+		currentSearch++;
+		
+		System.out.println("Searching for pray...");
 		for(int r = 0; r < model.size(); r++)
 			for(int c = 0; c < model.size(); c++) {
-				char tp = model.get(r, c);
-				if(tp == '1') {
-					player_row = r;
-					player_col = c;
+				node = model.get(r, c);
+				if(!found && activePrey.contains(node.getTile())) {
+					found = true;
+					prey.setPos(r, c);
+					currentSearch = 0;
 				}
 			}
 	}
 	
-	public void execute() {
-		int temp_row = this.row, temp_col = this.col;
-		
-		if(!playerFound) {
-			// Randomly moves until player is found(in range)
-			synchronized (model) {
-			//Randomly pick a direction up, down, left or right
-				if (rand.nextBoolean()) {
-					temp_row += rand.nextBoolean() ? 1 : -1;
-				}else {
-					temp_col += rand.nextBoolean() ? 1 : -1;
-				}
-
-				if (model.isValidMove(row, col, temp_row, temp_col, enemyID)) {
-					/*
-					* This fires if the character can move to a cell, i.e. if it is not
-					* already occupied. You can add extra logic here to invoke
-					* behaviour when the computer controlled character is in the proximity
-					* of the player or another character...
-					*/
-					model.set(temp_row, temp_col, enemyID);
-					model.set(row, col, '\u0020');
-					row = temp_row;
-					col = temp_col;
+	public int execute(boolean alive) {
+		if(alive) {
+			if(!preyFound) {
+				searchForPrey();
+				path = pf.requestPath(model.get(pos.getRow(), pos.getCol()), model.get(prey.getRow(), prey.getCol()));
+				
+				try {
+					if(!path.isEmpty()) {
+						preyFound = true;
+						System.out.println("\tStalking prey.");
+					}
+				}catch(NullPointerException e) {
+					//System.out.println(e.toString());
 				}
 			}
-			
-			// Search for player
-			searchForPlayer();
-			
-			path = pf.requestPath(graph.get(this.row, this.col), graph.get(player_row, player_col), graph);
-			if(path.get(0).f_cost() < 150) {
-				playerFound = true;
+			if(preyFound) {
+				stalkPrey();
 			}
+		} else {
+			return triggerDeath();
 		}
-			
-		if(playerFound && !path.isEmpty()) {
 
-			model.set(path.get(0).getRow(), path.get(0).getCol(), enemyID);
-			model.set(temp_row, temp_col, '\u0020');
-			this.col = path.get(0).getCol();
-			this.row = path.get(0).getRow();
-			path.get(0).resetNode();
-			path.remove(0);
-			
+		if(currentSearch == MAX_SEARCH) {
+			System.out.println("Reached MAX_SEARCH, killing this npc.");
+			return triggerDeath();
+		}
+		
+		return 1;
+	}
+	
+	private void stalkPrey() {
+		tempPos.setPos(pos.getRow(), pos.getCol());
+		
+		try {
+			// This was causing a lot of issues.
 			if(path.isEmpty()) {
-				playerFound = false;
+				preyFound = false;
 				path = null;
 			}
+		}catch(Exception e) {
+			preyFound = false;
+			//System.out.println(e.toString());
+		}
+		
+		synchronized (model) {
+			// Already determined that this will be a value move.
+			model.set(path.get(0).getRow(), path.get(0).getCol(), enemyID);
+			model.set(tempPos.getRow(), tempPos.getCol(), '\u0020');
+			pos.setPos(path.get(0).getRow(), path.get(0).getCol());
+			path.get(0).resetNode();
+			path.remove(0);
 		}
 	}
-	
+
+	private int triggerDeath() {
+		model.set(pos.getRow(), pos.getCol(), '\u0020');
+		return 0;
+	}
+
 }
